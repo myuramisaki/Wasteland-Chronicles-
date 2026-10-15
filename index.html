@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Curator — Museum of Stolen Time</title>
+    <style>
+        /* --- Reset & Layout Settings --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #030000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        /* --- Primary Game Container (16:9 Aspect Ratio) --- */
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 56.25vw;
+            max-width: 1920px;
+            max-height: 1080px;
+            background: radial-gradient(circle at 68% 45%, #2c1a47 0%, #1a0f30 45%, #0a0518 85%);
+            overflow: hidden;
+            box-shadow: 0 0 100px rgba(0, 0, 0, 0.9) inset;
+        }
+
+        /* Dark Vignette Overlay */
+        .game-container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.85) 100%);
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        /* --- Background Artwork Elements --- */
+        .museum-silhouette {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 55%;
+            height: 65%;
+            background: linear-gradient(to top, #000000 80%, transparent 100%);
+            z-index: 2;
+            clip-path: polygon(
+                0% 100%, 8% 70%, 15% 55%, 22% 68%, 28% 40%, 35% 58%, 42% 20%, 
+                48% 45%, 55% 30%, 62% 52%, 70% 25%, 78% 48%, 85% 35%, 92% 55%, 100% 100%
+            );
+            opacity: 0.95;
+        }
+
+        .time-signet {
+            position: absolute;
+            top: 5%;
+            right: 10%;
+            width: 420px;
+            height: 420px;
+            border: 2px solid rgba(157, 142, 255, 0.15);
+            border-radius: 50%;
+            z-index: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: slowRotate 60s linear infinite;
+        }
+        @keyframes slowRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .time-signet::before {
+            content: '';
+            position: absolute;
+            width: 82%;
+            height: 82%;
+            border: 1px dashed rgba(157, 142, 255, 0.1);
+            border-radius: 50%;
+            animation: slowRotateReverse 45s linear infinite;
+        }
+        @keyframes slowRotateReverse {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+        }
+        .time-signet::after {
+            content: '⏱';
+            font-size: 80px;
+            color: rgba(157, 142, 255, 0.2);
+        }
+
+        .ambient-fog {
+            position: absolute;
+            width: 200%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(157,142,255,0.03) 0%, transparent 50%);
+            top: 0;
+            left: -50%;
+            z-index: 3;
+            animation: drift 35s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes drift {
+            0% { transform: translateX(0) translateY(0); }
+            50% { transform: translateX(8%) translateY(-4%); }
+            100% { transform: translateX(0) translateY(0); }
+        }
+
+        .ambient-fog-2 {
+            animation: driftReverse 45s linear infinite;
+            animation-delay: -15s;
+        }
+        @keyframes driftReverse {
+            0% { transform: translateX(0) translateY(0); }
+            50% { transform: translateX(-8%) translateY(4%); }
+            100% { transform: translateX(0) translateY(0); }
+        }
+
+        /* --- Sound Toggle --- */
+        .sound-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 100;
+            background: rgba(10, 5, 25, 0.7);
+            border: 1px solid rgba(157, 142, 255, 0.3);
+            color: #9d8eff;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .sound-toggle:hover {
+            border-color: #9d8eff;
+            box-shadow: 0 0 12px rgba(157, 142, 255, 0.4);
+        }
+        .sound-toggle.muted { opacity: 0.4; }
+
+        /* --- Main Content Layout --- */
+        .main-wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+
+        /* Left — Title & Navigation Area */
+        .title-side {
+            width: 42%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 40px;
+        }
+        .game-title {
+            font-size: 2.8rem;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 8px;
+            text-shadow: 0 0 20px rgba(157, 142, 255, 0.5);
+            font-weight: 900;
+        }
+        .game-subtitle {
+            font-size: 1rem;
+            color: #9d8eff;
+            letter-spacing: 3px;
+            margin-bottom: 50px;
+            opacity: 0.8;
+        }
+
+        .menu-navigation {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .menu-item {
+            font-size: 1.5rem;
+            color: #bcbccc;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            cursor: pointer;
+            transition: all 0.25s ease-out;
+            position: relative;
+            padding: 8px 15px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+        }
+        .menu-item.active {
+            color: #ffffff;
+            transform: scale(1.03) translateX(20px);
+            text-shadow: 0 0 12px rgba(157, 142, 255, 0.6);
+        }
+        .menu-item.active::before {
+            content: '';
+            position: absolute;
+            left: -60px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 280px;
+            height: 130%;
+            background: linear-gradient(90deg, rgba(10,5,25,0.9) 0%, rgba(26,15,48,0.7) 75%, transparent 100%);
+            z-index: -1;
+            clip-path: polygon(0% 20%, 92% 5%, 100% 50%, 88% 95%, 0% 80%);
+            border-left: 4px solid #9d8eff;
+        }
+        .menu-item.active::after {
+            content: '◆';
+            position: absolute;
+            left: -35px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1rem;
+            color: #9d8eff;
+            text-shadow: 0 0 8px #9d8eff;
+        }
+
+        /* Right — Story & Puzzle Area */
+        .content-side {
+            width: 58%;
+            height: 100%;
+            background: linear-gradient(to left, rgba(10, 5, 25, 0.92) 0%, rgba(26, 15, 48, 0.7) 100%);
+            padding: 35px 40px;
+            overflow-y: auto;
+            border-left: 1px solid rgba(157, 142, 255, 0.2);
+        }
+
+        .room-label {
+            color: #9d8eff;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+        }
+        .room-name {
+            color: #fff;
+            font-size: 1.6rem;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(157, 142, 255, 0.4);
+        }
+        .frag-dots {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .frag-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 1px solid #444;
+            background: #111;
+            transition: all 0.4s;
+        }
+        .frag-dot.collected {
+            border-color: #9d8eff;
+            background: #9d8eff;
+            box-shadow: 0 0 8px #9d8eff;
+        }
+        .story-text {
+            color: #c8c8e8;
+            font-size: 0.95rem;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+        .clue-box {
+            background: rgba(40, 30, 80, 0.4);
+            border-left: 2px solid #9d8eff;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            font-style: italic;
+            color: #d0d0f0;
+            font-size: 0.9rem;
+        }
+
+        /* Puzzle Area */
+        .puzzle-area {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(157, 142, 255, 0.2);
+            padding: 25px;
+            margin-bottom: 20px;
+            min-height: 120px;
+        }
+
+        /* Buttons & Choices */
+        .choice-btn {
+            color: #e0e0ff;
+            padding: 12px 20px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.3s;
+            background: transparent;
+            text-align: left;
+            width: 100%;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+        .choice-btn:hover {
+            background-color: rgba(157, 142, 255, 0.2);
+            border-color: #9d8eff;
+            border-radius: 3px;
+        }
+        .choice-btn.selected {
+            background-color: rgba(157, 142, 255, 0.3);
+            border-color: #9d8eff;
+        }
+        .choice-btn.locked { opacity: 0.35; cursor: not-allowed; }
+        .sub-text {
+            color: #777;
+            font-size: 0.85rem;
+            padding: 2px 0 10px 20px;
+        }
+
+        /* Fragment Display */
+        .fragment-box {
+            background: rgba(50, 40, 100, 0.35);
+            border: 1px dashed rgba(157, 142, 255, 0.4);
+            padding: 18px 22px;
+            margin: 20px 0;
+            color: #d8d8f8;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            animation: fadeIn 0.6s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fragment-label {
+            color: #9d8eff;
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Ending Overlays */
+        .end-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(5, 2, 15, 0.96);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 40px;
+            text-align: center;
+        }
+        .end-title {
+            font-size: 2.2rem;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            margin-bottom: 25px;
+            text-shadow: 0 0 20px currentColor;
+        }
+        .end-desc {
+            color: #b8b8d8;
+            font-size: 1rem;
+            max-width: 550px;
+            line-height: 1.9;
+            margin-bottom: 35px;
+        }
+        .end-btn {
+            background: transparent;
+            border: 1px solid #9d8eff;
+            color: #9d8eff;
+            padding: 12px 30px;
+            font-size: 1rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin: 8px;
+            transition: all 0.3s;
+            letter-spacing: 2px;
+        }
+        .end-btn:hover {
+            background: #9d8eff;
+            color: #000;
+            box-shadow: 0 0 15px #9d8eff;
+        }
+
+        /* Puzzle Specific Elements */
+        .symbol-grid { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
+        .symbol-btn {
+            width: 80px;
+            height: 80px;
+            background: rgba(30, 20, 60, 0.6);
+            border: 2px solid #333;
+            border-radius: 6px;
+            font-size: 32px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .symbol-btn:hover { border-color: #9d8eff; transform: scale(1.08); box-shadow: 0 0 10px rgba(157,142,255,0.3); }
+        .symbol-btn.selected { border-color: #9d8eff; background: rgba(157,142,255,0.2); box-shadow: 0 0 12px #9d8eff; }
+        .symbol-btn.correct { border-color: #6bb343; background: rgba(107, 179, 67, 0.15); }
+        .symbol-btn.wrong { border-color: #c93737; background: rgba(201, 55, 55, 0.15); }
+
+        .dial-row { display: flex; gap: 10px; align-items: center; margin: 10px 0; }
+        .dial { flex: 1; }
+        .dial label { font-size: 0.85rem; color: #9d8eff; display: inline-block; width: 70px; }
+        .dial select {
+            background: rgba(20, 10, 40, 0.8);
+            color: #e0e0ff;
+            border: 1px solid #444;
+            padding: 8px 12px;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .clock-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+        .clock-slot {
+            width: 50px;
+            height: 50px;
+            background: rgba(20, 10, 40, 0.8);
+            border: 1px solid #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .clock-slot:hover { border-color: #9d8eff; }
+        .clock-slot.filled { border-color: #9d8eff; background: rgba(157,142,255,0.15); }
+
+        .word-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+        .word-token {
+            background: rgba(40, 30, 80, 0.5);
+            border: 1px solid #444;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.25s;
+            color: #d0d0f0;
+        }
+        .word-token:hover { border-color: #9d8eff; }
+
+        .star-grid { position: relative; width: 280px; height: 220px; margin: 0 auto; }
+        .star {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: #333;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .star:hover { background: #666; transform: scale(1.2); }
+        .star.active { background: #9d8eff; box-shadow: 0 0 10px #9d8eff; }
+        .star.correct { background: #ffd700; box-shadow: 0 0 12px #ffd700; }
+
+        .orb-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .orb {
+            width: 100px;
+            padding: 15px 10px;
+            background: rgba(30, 20, 60, 0.6);
+            border: 2px solid #444;
+            border-radius: 50%;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.8rem;
+            color: #c8c8e8;
+        }
+        .orb:hover { border-color: #9d8eff; transform: scale(1.05); }
+        .orb.selected { border-color: #ffd700; box-shadow: 0 0 12px #ffd700; }
+
+        .key-choice {
+            border: 1px solid rgba(157, 142, 255, 0.25);
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(20, 10, 40, 0.3);
+        }
+        .key-choice:hover {
+            border-color: #9d8eff;
+            background: rgba(157, 142, 255, 0.1);
+            transform: translateX(5px);
+        }
+        .key-title { font-weight: bold; margin-bottom: 8px; color: #9d8eff; font-size: 1rem; }
+        .key-desc { font-size: 0.85rem; color: #888; line-height: 1.6; }
+
+        .hidden { display: none !important; }
+        .back-btn {
+            display: inline-block;
+            margin-top: 10px;
+            color: #9d8eff;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        .back-btn:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+<div id="game-container" class="game-container">
+
+    <!-- Background Elements -->
+    <div class="ambient-fog"></div>
+    <div class="ambient-fog ambient-fog-2"></div>
+    <div class="time-signet"></div>
+    <div class="museum-silhouette"></div>
+
+    <!-- Sound Toggle -->
+    <button class="sound-toggle" id="sound-btn" onclick="toggleSound()">🔊</button>
+
+    <!-- MENU VIEW -->
+    <div id="menu-view" class="main-wrapper">
+        <div class="title-side">
+            <h1 class="game-title">The Curator</h1>
+            <p class="game-subtitle">Museum of Stolen Time</p>
+            <nav class="menu-navigation">
+                <div class="menu-item active" data-action="start">Enter the Museum</div>
+                <div class="menu-item" data-action="help">How to Play</div>
+                <div class="menu-item" data-action="none">Credits</div>
+            </nav>
+        </div>
+        <div class="content-side">
+            <h2 class="room-label">A Place Outside Time</h2>
+            <h3 class="room-name">Welcome</h3>
+            <p class="story-text">
+                It does not exist on any map. Each exhibit holds a moment from the past — but someone has rewritten the endings. Restore history by solving puzzles. Every fixed exhibit reveals why this place exists… and who is trapping you here.
+            </p>
+            <p class="story-text">
+                <strong>7 Rooms</strong> — each with a unique puzzle<br>
+                <strong>6 Fragments</strong> — piece together the truth<br>
+                <strong>3 Endings</strong> — the future is yours to decide
+            </p>
+            <div class="back-btn" onclick="showHelp()" style="margin-top:20px;">📖 Read the Guide →</div>
+        </div>
+    </div>
+
+    <!-- HELP VIEW -->
+    <div id="help-view" class="main-wrapper hidden">
+        <div class="title-side">
+            <h1 class="game-title">How to Play</h1>
+            <p class="game-subtitle">Guidance</p>
+            <nav class="menu-navigation">
+                <div class="menu-item" data-action="menu">Return</div>
+            </nav>
+        </div>
+        <div class="content-side">
+            <h2 class="room-label">The Rules</h2>
+            <h3 class="room-name">Your Mission</h3>
+            <p class="story-text">
+                <strong>Explore Each Room</strong><br>
+                Every chamber holds a different kind of puzzle. Read the story and clues carefully — the answers are hidden in plain sight.
+            </p>
+            <p class="story-text">
+                <strong>Collect Fragments</strong><br>
+                When you solve a puzzle, you'll receive a Fragment. Each one reveals more about this museum, the people involved, and the dark truth behind the changes to history.
+            </p>
+            <p class="story-text">
+                <strong>Choose Wisely</strong><br>
+                At the end, you won't find a single "right" answer. You'll face three different futures. All are valid. None are perfect. Which one will you lock in place forever?
+            </p>
+            <div class="back-btn" onclick="showMenu()">← Back to Main Menu</div>
+        </div>
+    </div>
+
+    <!-- GAME VIEW -->
+    <div id="game-view" class="main-wrapper hidden">
+        <div class="title-side">
+            <h2 class="room-label" id="loc-tag">ENTRANCE HALL</h2>
+            <h3 class="room-name" id="loc-name">The Door of Eras</h3>
+            <div class="frag-dots" id="frag-dots">
+                <span style="font-size:0.8rem; color:#666; margin-right:10px;">Key:</span>
+  
